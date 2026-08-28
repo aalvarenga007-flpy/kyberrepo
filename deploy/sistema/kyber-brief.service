@@ -1,0 +1,24 @@
+# /etc/systemd/system/kyber-brief.service
+#
+# Resumen diario. En Windows corre por Programador de tareas a las 09:00
+# (no 08:40 como decia el handoff).
+#
+# daily_brief.py hace DOS llamadas al agente (BRIEF_VENTAS + BRIEF_FINANZAS)
+# porque las nueve secciones y las cinco sucursales de Ekaru excedian
+# MAX_TOOL_ROUNDS = 14 en una sola. NO VOLVER A UNIRLAS.
+
+[Unit]
+Description=Resumen diario Conepasa IA
+After=network-online.target mysqld.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=kyber
+Group=kyber
+WorkingDirectory=/opt/kyber/app
+EnvironmentFile=/etc/kyber/kyber.env
+ExecStart=/opt/kyber/venv/bin/python scripts/daily_brief.py
+TimeoutStartSec=1800
+StandardOutput=journal
+StandardError=journal

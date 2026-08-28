@@ -1,0 +1,61 @@
+# =====================================================================
+# CONEPASA IA - Configuracion de Streamlit
+#
+# Este archivo va en:  claude_engine\.streamlit\config.toml
+# (la carpeta .streamlit hay que crearla, empieza con punto)
+#
+# Sirve para no tener que escribir parametros en la linea de comandos:
+# Streamlit lee esto solo cada vez que arranca.
+# =====================================================================
+
+[server]
+
+# 0.0.0.0 significa "aceptar conexiones desde cualquier equipo de la red
+# local", no solo desde esta computadora. Es lo que permite entrar desde
+# el celular escribiendo la direccion IP del servidor.
+#
+# ANTES de la Fase 0 esto habria sido un problema serio: cualquiera
+# conectado al WiFi veia los datos sin pedir permiso. Ahora se topa con
+# la pantalla de login.
+address = "0.0.0.0"
+
+port = 8502
+
+# No abrir el navegador solo: de eso se encarga el .bat.
+headless = true
+
+# Los archivos que sube el usuario (Excel de cheques, por ejemplo) no
+# deberian pasar de 50 MB.
+maxUploadSize = 50
+
+# --- Agregado el 25/08/2026 ------------------------------------------
+# Streamlit vigila los archivos .py y reinicia el script solo cuando
+# detecta un cambio. El proyecto vive dentro de una carpeta de OneDrive,
+# que toca los archivos cada vez que sincroniza aunque el contenido no
+# haya cambiado. Cuando eso pasa en medio de una pregunta (el agente
+# tarda entre 10 y 40 segundos), el script se corta a la mitad: la
+# pregunta ya quedo guardada en la sesion pero la respuesta no, y la
+# conversacion queda partida.
+#
+# "none" apaga esa vigilancia. Contrapartida: si se edita un archivo .py
+# hay que reiniciar Streamlit a mano para ver el cambio (Ctrl+C y volver
+# a arrancar). En un servidor es lo correcto; en desarrollo es un paso
+# extra que conviene aceptar hasta que el proyecto salga de OneDrive.
+fileWatcherType = "none"
+
+
+[browser]
+
+# No enviar estadisticas de uso a Streamlit. En una instalacion de un
+# cliente no corresponde que salga informacion hacia afuera.
+gatherUsageStats = false
+
+
+[client]
+
+# Si algo falla, que el usuario vea un mensaje limpio y no el detalle
+# tecnico del error en pantalla. El detalle igual queda en logs/app.log.
+#
+# Mientras estas desarrollando conviene "full" para ver los errores
+# completos. Para la instalacion en un cliente, dejalo en "minimal".
+showErrorDetails = "full"

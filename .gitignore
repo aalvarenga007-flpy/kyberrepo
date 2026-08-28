@@ -1,0 +1,42 @@
+# Secretos — NUNCA versionar
+.env
+*.env
+!.env.example
+config.txt
+sync/*/config.txt
+/etc/kyber/
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Cache de Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Datos y salidas generadas
+data/
+datos/
+logs/
+backups/
+*.sqlite3
+*.log
+*.sql.gz
+
+# Archivos que no van al servidor
+*.bat
+cloudflared.exe
+files/
+files.zip
+*.xlsx
+
+# Sistema operativo y editores
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/
+.claude/

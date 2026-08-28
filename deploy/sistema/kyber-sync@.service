@@ -1,0 +1,32 @@
+# /etc/systemd/system/kyber-sync@.service
+#
+# Plantilla: se instancia como kyber-sync@ekaru y kyber-sync@ejapo.
+# El src/ del conector es identico entre empresas; lo unico que cambia es el
+# config.txt, por eso alcanza una sola plantilla.
+#
+# ANTES DE HABILITAR: confirmar que la IP publica 186.12.177.53 esta declarada
+# del lado de los dos ERP. Un solo intento fallido de autenticacion BLOQUEA el
+# token del lado del proveedor y deja a la empresa sin datos hasta la
+# reactivacion manual (ERP -> gestion -> menu BI).
+
+[Unit]
+Description=Sincronizador BI %i
+After=network-online.target mysqld.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=kyber
+Group=kyber
+WorkingDirectory=/opt/kyber/sync/%i
+# PHP 7.4.33 del sistema. Verificado el 27/08: el conector pasa 'php -l' en los 13
+# archivos, tiene las 7 extensiones que necesita y no usa nada exclusivo de PHP 8.
+# Corre por CLI, no por FPM: no comparte nada con el ERP de /opt/nginx/html28.
+ExecStart=/usr/bin/php /opt/kyber/sync/%i/worker.php
+
+# El worker se cuelga sin avisar: ya pasaba en produccion en Windows.
+# El heartbeat interno tiene timeout de 120 min; este es el corte duro.
+TimeoutStartSec=7200
+
+StandardOutput=journal
+StandardError=journal

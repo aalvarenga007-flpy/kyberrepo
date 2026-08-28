@@ -1,0 +1,25 @@
+# /etc/systemd/system/kyber-sync@.timer
+#
+# Cada hora, las 24 horas. Replica el comportamiento actual de Windows
+# (tareas "Ekaru BI Worker" y "Ejapo BI Worker", repeticion PT1H).
+#
+# DECISION DE ESTEBAN, 27/08/2026: no se implementa la restriccion 17:00-03:00.
+# Fundamento: la ventana movil de 5 dias ya esta activa en ambos conectores
+# desde el 24/08, y su relectura recupera los comprobantes de mesas abiertas
+# que la paginacion keyset saltea durante el servicio. A cambio los datos
+# quedan frescos todo el dia.
+#
+# SI reaparecen comprobantes faltantes: el primer paso es volver a esta
+# decision y acotar la ventana horaria, no subir resync_dias.
+
+[Unit]
+Description=Sincronizador BI %i cada hora
+
+[Timer]
+OnCalendar=hourly
+# Evita que las dos empresas peguen contra los ERP en el mismo segundo.
+RandomizedDelaySec=180
+Persistent=true
+
+[Install]
+WantedBy=timers.target

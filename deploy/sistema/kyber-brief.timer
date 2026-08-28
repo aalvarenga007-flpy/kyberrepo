@@ -1,0 +1,15 @@
+# /etc/systemd/system/kyber-brief.timer
+#
+# 09:00 hora de Paraguay. Depende de que el reloj del SISTEMA este en
+# America/Asuncion: systemd interpreta OnCalendar en la zona local.
+# Verificar con 'timedatectl' antes de habilitar.
+
+[Unit]
+Description=Resumen diario Conepasa IA a las 09:00
+
+[Timer]
+OnCalendar=*-*-* 09:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

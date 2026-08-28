@@ -1,0 +1,29 @@
+; ============================================================
+; Ekaru BI Sync — Archivo de Configuracion
+; Generado: 2026-07-27 02:08:16
+; ============================================================
+app_name = Ekaru BI Sync
+version  = 1.0.0
+; URL base del backend SaaS del cliente (sin slash final)
+url_base = https://pizzaromana.servidor.com.py
+; API Key del cliente
+api_key  = PONER_LA_CLAVE_DEL_ERP
+; Registros por pagina (recomendado 500-1000, maximo real backend: 10000)
+page_size = 1000
+resync_dias = 5
+resync_margen_ids = 0
+; Minutos antes de considerar un worker colgado
+worker_timeout_minutes = 120
+; Horas sin sincronizar para encolar automaticamente (0 = desactivado)
+auto_sync_hours = 24
+; ── Base de datos MySQL local ────────────────────────────────
+[db]
+host     = localhost
+port     = 3306
+name     = ekaru_gastronomia_bi
+user     = root
+password = PONER_LA_CLAVE_DE_MYSQL
+; ── HTTP ─────────────────────────────────────────────────────
+http_timeout     = 60
+http_retries     = 3
+http_retry_delay = 2

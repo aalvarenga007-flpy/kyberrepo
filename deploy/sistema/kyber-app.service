@@ -1,0 +1,41 @@
+# /etc/systemd/system/kyber-app.service
+#
+# UN SOLO servicio para las DOS empresas. La empresa activa sale de la sesion
+# del usuario (core/auth.py -> filtrar_empresas, contra conepasa_auth), NO del
+# .env. Montar dos procesos partiria el control de consumo, que se lleva por
+# empresa activa de la sesion. La Guia v3.0 decia lo contrario y era incorrecto.
+
+[Unit]
+Description=Conepasa IA (motor Kyber)
+After=network-online.target mysqld.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kyber
+Group=kyber
+WorkingDirectory=/opt/kyber/app
+
+# Los secretos viven aca, fuera de Git, con permisos 600.
+EnvironmentFile=/etc/kyber/kyber.env
+
+# Venv creado en Rocky con el Python 3.12 de AppStream. NUNCA el venv de Windows.
+ExecStart=/opt/kyber/venv/bin/python -m streamlit run app.py
+
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+
+# Logs al journal: journalctl -u kyber-app -f
+StandardOutput=journal
+StandardError=journal
+
+# Endurecimiento basico. shared/ es lo unico que la app escribe.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/kyber/shared
+
+[Install]
+WantedBy=multi-user.target

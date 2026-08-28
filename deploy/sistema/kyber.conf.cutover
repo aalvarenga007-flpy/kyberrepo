@@ -1,0 +1,97 @@
+# /etc/nginx/conf.d/kyber.conf  —  VERSION DE CUTOVER (Fase 5)
+#
+# DECISION DE ESTEBAN, 27/08/2026: el motor REEMPLAZA al landing en la raiz.
+# https://kyber.com.py deja de mostrar la landing y pasa a ser el login del motor.
+#
+# ============================================================================
+# NO INSTALAR ESTE ARCHIVO DURANTE LAS FASES 3 NI 4.
+#
+# Mientras el motor no este validado, kyber.com.py tiene que seguir sirviendo
+# el landing. Si se reemplaza antes, el sitio publico queda caido o mostrando
+# una aplicacion sin probar. Las pruebas de las fases 3 y 4 se hacen con
+# 'curl http://127.0.0.1:8502' desde el servidor y por TUNEL SSH:
+#
+#     ssh -p 715 -L 8502:127.0.0.1:8502 usuario@186.12.177.53
+#     y despues abrir http://localhost:8502 en la Zenbook
+#
+# ANTES DE APLICARLO, EN EL CUTOVER:
+#   1. Respaldar el archivo actual:
+#        cp /etc/nginx/conf.d/kyber.conf /opt/kyber/backups/kyber.conf.landing
+#   2. Respaldar el landing entero:
+#        tar czf /opt/kyber/backups/landing.tgz /opt/kyber/landing
+#      El landing es el rollback: si el motor falla, se vuelve en un minuto.
+#   3. nginx -t   antes de recargar. Siempre.
+#
+# No hace falta DNS nuevo ni certificado nuevo: el de kyber.com.py ya cubre
+# este bloque.
+# ============================================================================
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name kyber.com.py www.kyber.com.py;
+    return 301 https://kyber.com.py$request_uri;
+}
+
+# www -> raiz, para no servir la app en dos direcciones distintas.
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name www.kyber.com.py;
+
+    ssl_certificate     /etc/letsencrypt/live/kyber.com.py/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/kyber.com.py/privkey.pem;
+
+    return 301 https://kyber.com.py$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name kyber.com.py;
+
+    ssl_certificate     /etc/letsencrypt/live/kyber.com.py/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/kyber.com.py/privkey.pem;
+
+    # El presupuestador acepta archivos de hasta 50 MB (maxUploadSize de
+    # Streamlit). Con el default de 1 MB la subida muere con un 413 y el
+    # mensaje no aclara que fue Nginx.
+    client_max_body_size 50M;
+
+    # Renovacion de Let's Encrypt: se resuelve por archivo, no por el proxy.
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8502;
+        proxy_http_version 1.1;
+
+        # ------------------------------------------------------------------
+        # ESTAS DOS LINEAS SON EL ERROR MAS PROBABLE DE TODA LA MIGRACION.
+        # Streamlit habla por WebSocket. Sin ellas la pagina CARGA y despues
+        # se queda girando para siempre, sin un solo error en el log. Se ve
+        # como "la app no anda" y se pierden horas buscando del lado equivocado.
+        proxy_set_header Upgrade    $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        # ------------------------------------------------------------------
+
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Las respuestas del agente tardan entre 10 y 40 segundos, y el
+        # presupuestador con extraccion de archivos bastante mas. Con el
+        # default de 60s la conexion se corta a mitad de una respuesta.
+        proxy_read_timeout    3600s;
+        proxy_send_timeout    3600s;
+        proxy_connect_timeout 60s;
+
+        # Streamlit hace streaming: si Nginx lo bufferea, la interfaz se
+        # actualiza a los saltos o directamente no se actualiza.
+        proxy_buffering off;
+    }
+}
