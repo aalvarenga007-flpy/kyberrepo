@@ -73,6 +73,22 @@ _CSS = """
     margin-bottom: 0.8rem;
 }
 
+/* Version funcional siempre visible en la esquina marcada del sidebar. */
+.kyber-sidebar-version {
+    position: fixed;
+    left: 1.75rem;
+    bottom: 0.75rem;
+    z-index: 1000;
+    padding: 0.2rem 0.45rem;
+    border-radius: 0.45rem;
+    background: var(--secondary-background-color);
+    color: var(--text-color);
+    opacity: 0.68;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
 
 /* ==================================================================
    TRAMO 1 - FOLD ABIERTO Y TABLETS (hasta 900 px)

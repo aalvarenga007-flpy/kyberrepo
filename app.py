@@ -5,13 +5,21 @@ import pandas as pd
 import streamlit as st
 
 from ai.agent import DataAnalystAgent
-from core import auth, estilos, panel_suscripciones, panel_usuarios, suscripcion
+from core import (
+    auth,
+    estilos,
+    panel_sincronizacion,
+    panel_suscripciones,
+    panel_usuarios,
+    suscripcion,
+)
 from core.audit import recent_queries, write_log
 from core.config import settings
 from core.consumo import estado_cupo, puede_consultar
 from core.db import ping
 from core.formato import formatear_dataframe_para_mostrar, formatear_numero
 from core.lfl import DESPLAZAMIENTO_DIAS, empresas_disponibles, lfl_comparison, list_branches
+from core.version import APP_VERSION
 
 # El modulo de presupuestos es opcional: si el archivo no esta o le falta una
 # dependencia, la app sigue funcionando igual y la pestana simplemente no
@@ -262,6 +270,14 @@ with st.sidebar:
                 f"\n\n{question}"
             )
 
+    # Identificador funcional del despliegue. La clase lo fija en la esquina
+    # inferior izquierda del panel para que siempre sea visible sin ocupar
+    # espacio entre los controles de trabajo.
+    st.markdown(
+        f'<div class="kyber-sidebar-version">v{APP_VERSION}</div>',
+        unsafe_allow_html=True,
+    )
+
 # Empresas que cotizan. Ekaru no presupuesta: es gastronomia.
 EMPRESAS_CON_PRESUPUESTOS = ("ejapo",)
 
@@ -330,6 +346,7 @@ else:
 # La pestaña de usuarios solo existe para el rol admin. No se dibuja y
 # se oculta; directamente no está.
 puede_administrar = auth.puede(usuario_sesion, "administra_usuarios")
+puede_administrar_sync = auth.puede(usuario_sesion, "administra_sincronizacion")
 
 # La pestana de suscripciones es de uso interno de Conepasa. No la ve el
 # cliente, ni siquiera el administrador de su propia empresa: depende de
@@ -341,6 +358,8 @@ if hay_presupuestos:
     etiquetas.append("🧾 Presupuestos")
 if puede_administrar:
     etiquetas.append("👥 Usuarios")
+if puede_administrar_sync:
+    etiquetas.append("🔄 Sincronización")
 if es_operador:
     etiquetas.append("💳 Suscripciones")
 
@@ -355,6 +374,10 @@ if hay_presupuestos:
 tab_usuarios = None
 if puede_administrar:
     tab_usuarios = pestanas[siguiente]
+    siguiente += 1
+tab_sincronizacion = None
+if puede_administrar_sync:
+    tab_sincronizacion = pestanas[siguiente]
     siguiente += 1
 tab_suscripciones = pestanas[siguiente] if es_operador else None
 
@@ -631,6 +654,10 @@ if tab_usuarios is not None:
         panel_usuarios.render(usuario_sesion, {
             clave: etiqueta for clave, (etiqueta, _) in TODAS_LAS_COMPANIES.items()
         })
+
+if tab_sincronizacion is not None:
+    with tab_sincronizacion:
+        panel_sincronizacion.render(company, COMPANIES[company][0])
 
 if tab_suscripciones is not None:
     with tab_suscripciones:

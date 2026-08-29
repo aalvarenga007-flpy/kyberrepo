@@ -26,6 +26,7 @@ import streamlit as st
 from sqlalchemy import create_engine, text
 
 from core.config import settings
+from core.version import APP_VERSION
 
 
 # =====================================================================
@@ -81,6 +82,7 @@ PERMISOS = {
         "usa_presupuestador": True,
         "ve_detalle_tecnico": True,
         "administra_usuarios": True,
+        "administra_sincronizacion": True,
         "administra_suscripciones": False,
     },
     "gerencia": {
@@ -92,6 +94,7 @@ PERMISOS = {
         "usa_presupuestador": True,
         "ve_detalle_tecnico": True,
         "administra_usuarios": False,
+        "administra_sincronizacion": False,
         "administra_suscripciones": False,
     },
     "operacion": {
@@ -105,6 +108,7 @@ PERMISOS = {
         # tablas y preguntas de otros usuarios. No es para este rol.
         "ve_detalle_tecnico": False,
         "administra_usuarios": False,
+        "administra_sincronizacion": False,
         "administra_suscripciones": False,
     },
     "presupuestos": {
@@ -116,6 +120,7 @@ PERMISOS = {
         "usa_presupuestador": True,
         "ve_detalle_tecnico": False,
         "administra_usuarios": False,
+        "administra_sincronizacion": False,
         "administra_suscripciones": False,
     },
 }
@@ -488,7 +493,7 @@ def _pantalla_login() -> None:
     izquierda, centro, derecha = st.columns([1, 1.7, 1])
     with centro:
         st.markdown("## 🤖 Conepasa IA")
-        st.caption("Ingresá con tu usuario para continuar.")
+        st.caption(f"Ingresá con tu usuario para continuar. · v{APP_VERSION}")
 
         with st.form("formulario_login", clear_on_submit=False):
             usuario = st.text_input("Usuario", key="campo_login_usuario")

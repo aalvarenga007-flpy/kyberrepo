@@ -1,0 +1,5 @@
+# /etc/sudoers.d/kyber-sync-control
+# Permite a la app despertar unicamente los dos workers. El encolado se hace
+# antes, como usuario kyber, mediante sync/control.php (CLI, nunca HTTP).
+kyber ALL=(root) NOPASSWD: /usr/bin/systemctl start --no-block kyber-sync@ekaru.service
+kyber ALL=(root) NOPASSWD: /usr/bin/systemctl start --no-block kyber-sync@ejapo.service

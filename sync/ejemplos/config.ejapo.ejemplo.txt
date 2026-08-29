@@ -17,7 +17,7 @@ resync_margen_ids = 0
 ; Minutos antes de considerar un worker colgado
 worker_timeout_minutes = 120
 ; Horas sin sincronizar para encolar automaticamente (0 = desactivado)
-auto_sync_hours = 24
+auto_sync_hours = 1
 ; ── Base de datos MySQL local ────────────────────────────────
 [db]
 host     = localhost

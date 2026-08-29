@@ -158,6 +158,17 @@ mesas abiertas que la paginación por ID se saltea. Si aparecen ventas faltantes
 lugar a mirar es este parámetro — pero no subirlo sin entender por qué.
 
 En el servidor corre por `systemd`, cada hora, con las unidades de `deploy/sistema/`.
+Para que la frecuencia sea realmente horaria deben coincidir **dos controles**:
+`OnCalendar=hourly` en el timer y `auto_sync_hours = 1` en cada `config.txt`. Con el
+valor 24 el timer se despierta cada hora, pero durante 23 ejecuciones no sincroniza.
+
+La pestaña **Sincronización**, visible solo para administradores, muestra el último
+resultado por vista, cola e historial de Ventas. La acción manual usa `sync/control.php`
+por CLI; ese archivo devuelve estado seguro, encola sin duplicar trabajos y no se
+publica por Nginx.
+
+El flujo de ramas, autoría, versiones y despliegue por commit está documentado en
+`deploy/FLUJO_GIT_Y_DESPLIEGUE.md`.
 
 ---
 

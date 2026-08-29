@@ -420,6 +420,33 @@ systemctl enable --now kyber-sync@ejapo.timer
 systemctl list-timers 'kyber-*' --no-pager
 ```
 
+### Frecuencia efectiva y panel de sincronización
+
+El timer horario no alcanza: el worker también aplica `auto_sync_hours`. Debe valer 1
+en las dos empresas para sincronizar realmente cada hora:
+
+```
+grep -E '^(auto_sync_hours|resync_dias)[[:space:]]*=' /opt/kyber/sync/ekaru/config.txt /opt/kyber/sync/ejapo/config.txt
+```
+
+El cambio a `auto_sync_hours = 1` debe hacerse en una ventana acordada: provoca una
+relectura móvil de cinco días por hora. No modificar `resync_dias = 5`.
+
+Para habilitar el panel administrativo y su ejecución manual:
+
+```
+install -o kyber -g kyber -m 0750 /opt/kyber/app/sync/control.php /opt/kyber/sync/ekaru/control.php
+install -o kyber -g kyber -m 0750 /opt/kyber/app/sync/control.php /opt/kyber/sync/ejapo/control.php
+install -o root -g root -m 0440 /opt/kyber/app/deploy/sistema/kyber-sync-control.sudoers /etc/sudoers.d/kyber-sync-control
+visudo -cf /etc/sudoers.d/kyber-sync-control
+sudo -u kyber /usr/bin/php /opt/kyber/sync/ekaru/control.php status
+sudo -u kyber /usr/bin/php /opt/kyber/sync/ejapo/control.php status
+```
+
+`control.php` es solo CLI y nunca se agrega a Nginx. La regla sudo permite arrancar
+únicamente `kyber-sync@ekaru` y `kyber-sync@ejapo`; no concede una shell ni edición de
+servicios.
+
 ---
 
 ## 13 · Resumen diario
