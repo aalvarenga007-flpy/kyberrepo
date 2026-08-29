@@ -36,10 +36,34 @@ class PanelSincronizacionTests(unittest.TestCase):
         app.run(timeout=20)
 
         self.assertFalse(list(app.exception))
-        self.assertEqual(app.metric[0].label, "Última sync de Ventas")
+        self.assertEqual(app.metric[0].label, "Última actualización de Ventas")
         self.assertEqual(app.metric[3].value, "Cada 1 h")
         self.assertEqual(app.selectbox[0].value, "Ventas")
-        self.assertTrue(any("Sincronizar Ventas" in button.label for button in app.button))
+        self.assertTrue(any("Actualizar solo Ventas" in button.label for button in app.button))
+
+    def test_explica_estado_no_disponible_sin_tecnicismos(self):
+        app = AppTest.from_string(
+            r'''
+from core import panel_sincronizacion as panel
+from core.sync_monitor import SyncMonitorError
+
+def estado_no_disponible(company):
+    raise SyncMonitorError("Detalle técnico reservado para soporte.")
+
+panel._estado_cacheado = estado_no_disponible
+panel.render("ekaru", "Ekarú Gastronomía")
+'''
+        )
+        app.run(timeout=20)
+
+        self.assertFalse(list(app.exception))
+        self.assertTrue(any("automáticamente cada hora" in item.value for item in app.info))
+        self.assertTrue(any("todavía no está habilitada" in item.value for item in app.warning))
+        boton = next(
+            button for button in app.button
+            if "Actualizar datos ahora" in button.label
+        )
+        self.assertTrue(boton.disabled)
 
 
 if __name__ == "__main__":

@@ -359,7 +359,7 @@ if hay_presupuestos:
 if puede_administrar:
     etiquetas.append("👥 Usuarios")
 if puede_administrar_sync:
-    etiquetas.append("🔄 Sincronización")
+    etiquetas.append("🔄 Actualizar datos")
 if es_operador:
     etiquetas.append("💳 Suscripciones")
 

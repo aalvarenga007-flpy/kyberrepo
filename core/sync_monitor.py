@@ -34,7 +34,7 @@ def _rutas_control(company: str) -> tuple[str, str]:
     control = raiz / company / "control.php"
     if not Path(php).is_file() or not control.is_file():
         raise SyncMonitorError(
-            "El control de sincronización está disponible únicamente en el servidor Kyber."
+            "El componente de actualización manual todavía no está conectado en este entorno."
         )
     return php, str(control)
 

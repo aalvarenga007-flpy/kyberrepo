@@ -48,19 +48,39 @@ def _minutos_desde(valor, server_time) -> int | None:
 
 
 def render(company: str, company_name: str) -> None:
-    st.subheader("🔄 Sincronización BI")
+    st.subheader("🔄 Actualización de datos")
     st.caption(
-        f"Estado de {company_name}. Este panel no expone claves ni el panel PHP antiguo."
+        f"Consultá cuándo se actualizaron por última vez los datos de {company_name} "
+        "y, cuando esté habilitado, pedí una actualización sin salir de Kyber."
     )
 
-    if st.button("Actualizar estado", key=f"sync_refresh_{company}"):
+    if st.button("Volver a consultar el estado", key=f"sync_refresh_{company}"):
         _estado_cacheado.clear()
         st.rerun()
 
     try:
         payload = _estado_cacheado(company)
     except SyncMonitorError as exc:
-        st.warning(str(exc))
+        st.info(
+            "Los datos continúan actualizándose automáticamente cada hora. "
+            "Podés seguir usando Conepasa IA normalmente."
+        )
+        st.warning(
+            "La actualización manual todavía no está habilitada en esta pantalla de pruebas."
+        )
+        st.markdown(
+            "**Esto no significa que haya un error en tus datos.** "
+            "Por ahora, si necesitás traer información nueva de inmediato, avisale a Adrián. "
+            "Cuando habilitemos el botón, vas a poder hacerlo directamente desde acá."
+        )
+        st.button(
+            "Actualizar datos ahora (próximamente)",
+            disabled=True,
+            width="stretch",
+            key=f"sync_unavailable_{company}",
+        )
+        with st.expander("Información para soporte"):
+            st.caption(str(exc))
         return
 
     vistas = list(payload.get("views") or [])
@@ -74,34 +94,35 @@ def render(company: str, company_name: str) -> None:
     antiguedad = "Nunca" if minutos is None else (f"{minutos} min" if minutos < 120 else f"{minutos // 60} h")
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Última sync de Ventas", _fecha(ventas.get("last_sync_end")))
-    col2.metric("Antigüedad", antiguedad)
-    col3.metric("En cola / ejecutando", en_cola)
-    col4.metric("Frecuencia efectiva", f"Cada {payload.get('auto_sync_hours', '?')} h")
-    st.caption(
-        f"Worker visto: {_fecha(payload.get('worker_last_run'))} · "
-        f"Ventana móvil: {payload.get('resync_days', '?')} días"
-    )
+    col1.metric("Última actualización de Ventas", _fecha(ventas.get("last_sync_end")))
+    col2.metric("Tiempo transcurrido", antiguedad)
+    col3.metric("Tareas en curso", en_cola)
+    col4.metric("Actualización automática", f"Cada {payload.get('auto_sync_hours', '?')} h")
+    with st.expander("Información técnica para soporte"):
+        st.caption(
+            f"Última actividad del proceso: {_fecha(payload.get('worker_last_run'))} · "
+            f"Período que se vuelve a revisar: {payload.get('resync_days', '?')} días"
+        )
 
     frecuencia = int(payload.get("auto_sync_hours") or 0)
     if frecuencia > 1:
         st.warning(
-            f"El timer se despierta cada hora, pero la configuración efectiva sincroniza "
-            f"recién después de {frecuencia} horas."
+            f"La actualización automática está configurada para ejecutarse cada "
+            f"{frecuencia} horas."
         )
     elif minutos is not None and minutos > 120:
-        st.warning("Ventas lleva más de dos horas sin una sincronización exitosa.")
+        st.warning("Ventas lleva más de dos horas sin una actualización exitosa.")
 
     filas = []
     for vista in vistas:
         cola = vista.get("queue") or {}
         filas.append(
             {
-                "Vista": vista.get("name"),
+                "Datos": vista.get("name"),
                 "Estado": _estado_visible(vista),
-                "Última sync": _fecha(vista.get("last_sync_end")),
+                "Última actualización": _fecha(vista.get("last_sync_end")),
                 "Registros": int(vista.get("total_records_local") or 0),
-                "Insertados": int(vista.get("last_records_inserted") or 0),
+                "Nuevos": int(vista.get("last_records_inserted") or 0),
                 "Actualizados": int(vista.get("last_records_updated") or 0),
                 "Progreso": int(cola.get("records_downloaded") or 0),
             }
@@ -123,25 +144,29 @@ def render(company: str, company_name: str) -> None:
         ]
         st.dataframe(pd.DataFrame(tabla_historial), width="stretch", hide_index=True)
 
-    st.markdown("#### Sincronización manual")
+    st.markdown("#### Actualizar ahora")
+    st.caption(
+        "Usá esta opción cuando necesites consultar datos que se cargaron después "
+        "de la última actualización automática."
+    )
     nombres = [str(v.get("name")) for v in vistas if v.get("name")]
     if not nombres:
         st.info("No hay vistas configuradas para sincronizar.")
         return
     vista = st.selectbox("Vista", nombres, index=nombres.index("Ventas") if "Ventas" in nombres else 0)
     confirmar = st.checkbox(
-        "Confirmo que deseo iniciar una sincronización ahora",
+        "Confirmo que deseo traer los datos más recientes ahora",
         key=f"sync_confirm_{company}",
     )
     col_vista, col_todo = st.columns(2)
     ejecutar_vista = col_vista.button(
-        f"Sincronizar {vista}",
+        f"Actualizar solo {vista}",
         disabled=not confirmar,
         width="stretch",
         key=f"sync_one_{company}",
     )
     ejecutar_todo = col_todo.button(
-        "Sincronizar todo",
+        "Actualizar todos los datos",
         disabled=not confirmar,
         width="stretch",
         key=f"sync_all_{company}",
@@ -154,5 +179,5 @@ def render(company: str, company_name: str) -> None:
         else:
             _estado_cacheado.clear()
             cantidad = int(resultado.get("queued") or 0)
-            st.success(f"Solicitud aceptada: {cantidad} trabajo(s) nuevo(s) en cola.")
-            st.info("El estado cambiará a Ejecutando al actualizar el panel.")
+            st.success(f"Actualización solicitada: {cantidad} tarea(s) preparada(s).")
+            st.info("En unos instantes el estado cambiará a Ejecutando.")
