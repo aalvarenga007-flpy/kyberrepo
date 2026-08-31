@@ -93,22 +93,29 @@ def health(url):
     raise RuntimeError('Health check did not become ready')
 
 try:
+    if not production:
+        # Prepare BOTH sets of request files before watchers run. Creating a
+        # production marker under an active PathModified could request a sync.
+        run('systemctl','stop','kyber-panel-request@ekaru.path','kyber-panel-request@ejapo.path')
     shutil.copytree(source, new)
     shutil.copy2(app/'.streamlit/config.toml', new/'.streamlit/config.toml')
     # No application env file should be bundled. Secrets stay in /etc/kyber.
     assert not (new/'.env').exists()
-    for name in ('tickets','leases','sessions','requests'):
-        directory = Path(state)/name
-        directory.mkdir(parents=True, exist_ok=True)
-        directory.chmod(0o700)
-        run('chown','kyber:kyber',str(directory))
-    Path(state).chmod(0o700)
-    run('chown','kyber:kyber',state)
-    for company in ('ekaru','ejapo'):
-        marker = Path(state)/'requests'/company
-        if not marker.exists():
-            marker.touch(mode=0o600)
-            run('chown','kyber:kyber',str(marker))
+    roots = [state] if production else [state, '/var/lib/kyber-panel']
+    for root in roots:
+        for name in ('tickets','leases','sessions','requests'):
+            directory = Path(root)/name
+            directory.mkdir(parents=True, exist_ok=True)
+            directory.chmod(0o700)
+            run('chown','kyber:kyber',str(directory))
+        Path(root).chmod(0o700)
+        run('chown','kyber:kyber',root)
+        for company in ('ekaru','ejapo'):
+            marker = Path(root)/'requests'/company
+            if not marker.exists():
+                assert not production, 'request markers must be prepared before enabling watchers'
+                marker.touch(mode=0o600)
+                run('chown','kyber:kyber',str(marker))
     config = (source/'deploy/panel-pruebas/php-fpm.conf').read_text()
     service = (source/'deploy/panel-pruebas/kyber-panel-pruebas.service').read_text()
     if production:
