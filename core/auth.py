@@ -469,6 +469,8 @@ def usuario_actual() -> dict | None:
 
 
 def cerrar_sesion() -> None:
+    from core.panel_access import revocar
+    revocar(st.session_state)
     datos = st.session_state.get(CLAVE_SESION)
     if datos:
         registrar_acceso(datos["usuario"], "logout")
@@ -478,6 +480,8 @@ def cerrar_sesion() -> None:
 
 
 def _abrir_sesion(datos: dict) -> None:
+    from core.panel_access import revocar
+    revocar(st.session_state)
     # Tambien al entrar, no solo al salir: si la sesion anterior vencio
     # sin que nadie apretara "Cerrar sesion", el historial sigue vivo en
     # el navegador y lo heredaria el que entre ahora.
@@ -598,6 +602,8 @@ def exigir_login() -> dict:
     datos = usuario_actual()
 
     if datos is None:
+        from core.panel_access import revocar
+        revocar(st.session_state)
         if st.session_state.get(CLAVE_SESION):
             st.session_state.pop(CLAVE_SESION, None)
             st.session_state.pop(CLAVE_EXPIRA, None)

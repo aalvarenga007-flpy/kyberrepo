@@ -1,0 +1,22 @@
+[Unit]
+Description=Panel PHP original de Kyber - acceso de administradores de PRUEBAS
+After=network.target mysqld.service
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/kyber/kyber-pruebas.env
+ExecStart=/usr/sbin/php-fpm --nodaemonize --fpm-config /etc/kyber/panel-pruebas-fpm.conf
+RuntimeDirectory=kyber-panel-pruebas
+RuntimeDirectoryMode=0755
+Restart=on-failure
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/kyber-panel-pruebas /run/kyber-panel-pruebas
+ReadWritePaths=/opt/kyber/sync/ekaru/logs /opt/kyber/sync/ejapo/logs
+ReadWritePaths=/opt/kyber/sync/ekaru/vistas.txt /opt/kyber/sync/ejapo/vistas.txt
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

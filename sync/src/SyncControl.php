@@ -26,11 +26,11 @@ class SyncControl
     const STATUS_DONE     = 'done';
     const STATUS_ERROR    = 'error';
 
-    public function __construct($pdo, $logger)
+    public function __construct($pdo, $logger, $ensureTables = true)
     {
         $this->pdo    = $pdo;
         $this->logger = $logger;
-        $this->ensureTables();
+        if ($ensureTables) $this->ensureTables();
     }
 
     // ── Creacion de tablas ────────────────────────────────────────────────────

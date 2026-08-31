@@ -1,4 +1,5 @@
 from datetime import date
+from html import escape
 from io import BytesIO
 
 import pandas as pd
@@ -20,6 +21,7 @@ from core.db import ping
 from core.formato import formatear_dataframe_para_mostrar, formatear_numero
 from core.lfl import DESPLAZAMIENTO_DIAS, empresas_disponibles, lfl_comparison, list_branches
 from core.version import APP_VERSION
+from core.panel_access import crear_enlace
 
 # El modulo de presupuestos es opcional: si el archivo no esta o le falta una
 # dependencia, la app sigue funcionando igual y la pestana simplemente no
@@ -273,8 +275,20 @@ with st.sidebar:
     # Identificador funcional del despliegue. La clase lo fija en la esquina
     # inferior izquierda del panel para que siempre sea visible sin ocupar
     # espacio entre los controles de trabajo.
+    panel_link = ""
+    if auth.puede(usuario_sesion, "administra_sincronizacion"):
+        try:
+            panel_url = crear_enlace(usuario_sesion, company, st.session_state,
+                                     st.session_state[auth.CLAVE_EXPIRA].timestamp())
+            panel_link = (
+                f'<a class="kyber-panel-link" href="{escape(panel_url, quote=True)}" '
+                'target="_blank" rel="noopener noreferrer">🔄 Panel de sincronización</a>'
+            )
+        except (ValueError, OSError, PermissionError):
+            panel_url = None
     st.markdown(
-        f'<div class="kyber-sidebar-version">v{APP_VERSION}</div>',
+        f'<div class="kyber-sidebar-footer">{panel_link}'
+        f'<div class="kyber-sidebar-version">v{APP_VERSION}</div></div>',
         unsafe_allow_html=True,
     )
 
@@ -657,7 +671,14 @@ if tab_usuarios is not None:
 
 if tab_sincronizacion is not None:
     with tab_sincronizacion:
-        panel_sincronizacion.render(company, COMPANIES[company][0])
+        if panel_url:
+            st.subheader("🔄 Panel de sincronización")
+            st.write(f"Abrí el panel completo de {COMPANIES[company][0]} que ya conocés.")
+            st.write("Vas a ver la última actualización, el estado de cada vista y los botones Sync, Sincronizar marcadas y Sincronizar todo.")
+            st.link_button("Abrir panel completo", panel_url)
+            st.caption("También tenés el acceso directo encima de la versión, abajo a la izquierda. Si el acceso venció, recargá Kyber y abrilo de nuevo.")
+        else:
+            panel_sincronizacion.render(company, COMPANIES[company][0])
 
 if tab_suscripciones is not None:
     with tab_suscripciones:

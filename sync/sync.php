@@ -5,21 +5,22 @@
  * Compatible con PHP 5.5+
  */
 
-define('BI_ROOT', __DIR__);
+if (!defined('BI_ROOT')) define('BI_ROOT', __DIR__);
+if (!defined('BI_CODE')) define('BI_CODE', __DIR__);
 
 set_time_limit(300);
 ini_set('memory_limit', '128M');
 ignore_user_abort(true);
 
-require_once BI_ROOT . '/src/Config.php';
-require_once BI_ROOT . '/src/Logger.php';
-require_once BI_ROOT . '/src/Database.php';
-require_once BI_ROOT . '/src/HttpClient.php';
-require_once BI_ROOT . '/src/SchemaManager.php';
-require_once BI_ROOT . '/src/DataLoader.php';
-require_once BI_ROOT . '/src/SyncControl.php';
-require_once BI_ROOT . '/src/ETLRunner.php';
-require_once BI_ROOT . '/src/Prerequisites.php';
+require_once BI_CODE . '/src/Config.php';
+require_once BI_CODE . '/src/Logger.php';
+require_once BI_CODE . '/src/Database.php';
+require_once BI_CODE . '/src/HttpClient.php';
+require_once BI_CODE . '/src/SchemaManager.php';
+require_once BI_CODE . '/src/DataLoader.php';
+require_once BI_CODE . '/src/SyncControl.php';
+require_once BI_CODE . '/src/ETLRunner.php';
+require_once BI_CODE . '/src/Prerequisites.php';
 
 header('Cache-Control: no-cache, no-store');
 header('X-Accel-Buffering: no');
@@ -39,7 +40,7 @@ try {
 
 try {
     $pdo         = Database::connect($config->getDbConfig());
-    $syncControl = new SyncControl($pdo, $logger);
+    $syncControl = new SyncControl($pdo, $logger, !defined('KYBER_WEB_PANEL'));
 } catch (Exception $e) {
     jsonResponse(array('ok' => false, 'error' => 'MySQL: ' . $e->getMessage()), 500);
     exit;
@@ -341,6 +342,16 @@ switch ($action) {
 
 function jsonResponse($data, $code = 200)
 {
+    if (defined('KYBER_WEB_PANEL')) {
+        $action = $_GET['action'] ?? '';
+        if (!empty($data['ok']) && in_array($action, array('enqueue', 'resume', 'restart'), true)) {
+            if (!panel_wake_worker()) {
+                $data['ok'] = false;
+                $data['error'] = 'La solicitud quedó guardada, pero no se pudo iniciar el sincronizador. Avisale a Adrián.';
+            }
+        }
+        $data = panel_redact($data);
+    }
     http_response_code($code);
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($data);

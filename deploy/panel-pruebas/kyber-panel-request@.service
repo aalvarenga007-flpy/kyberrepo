@@ -1,0 +1,10 @@
+[Unit]
+Description=Despertar sincronizador %i a pedido del administrador
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl start --no-block kyber-sync@%i.service
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true

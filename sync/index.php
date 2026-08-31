@@ -4,10 +4,11 @@
  * Compatible con PHP 5.5+
  */
 
-define('BI_ROOT', __DIR__);
+if (!defined('BI_ROOT')) define('BI_ROOT', __DIR__);
+if (!defined('BI_CODE')) define('BI_CODE', __DIR__);
 
-require_once BI_ROOT . '/src/Config.php';
-require_once BI_ROOT . '/src/Prerequisites.php';
+require_once BI_CODE . '/src/Config.php';
+require_once BI_CODE . '/src/Prerequisites.php';
 
 $configPath  = BI_ROOT . '/config.txt';
 $configError = null;
@@ -39,7 +40,7 @@ try {
     $vistasAgeHours = $vistasAge / 3600;
     $autoUpdateMsg  = '';
 
-    if ($vistasAgeHours >= 24) {
+    if ($vistasAgeHours >= 24 && !defined('KYBER_WEB_PANEL')) {
         // Intentar actualizar silenciosamente
         $wsUrl = $config->getVistasWsUrl();
         $ch    = curl_init();
@@ -238,12 +239,21 @@ input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--ac
     <div class="header-sub">Panel de Sincronizacion BI</div>
   </div>
   <div class="header-right">
+    <?php if (defined('KYBER_WEB_PANEL')): ?><a href="/" class="btn btn-ghost">← Volver a Kyber</a><?php endif; ?>
     <span class="version-badge">v<?php echo $version; ?></span>
     <button class="btn btn-ghost" onclick="showPrerequisites()" title="Verificar sistema">🔧 Sistema</button>
     <a href="configuracion.php" class="btn btn-ghost" title="Configuracion">⚙ Configuracion</a>
     <button class="btn btn-ghost" onclick="refreshStatus()">↻ Actualizar</button>
   </div>
 </header>
+
+<?php if (defined('KYBER_WEB_PANEL')): ?>
+<div style="background:#27324b;padding:14px 28px;color:#f4f6ff;font-size:14px">
+  <strong>Panel de pruebas · Datos reales de <?= htmlspecialchars($appName, ENT_QUOTES, 'UTF-8') ?></strong><br>
+  Mirar el estado no inicia una sincronización. Para traer lo más reciente, usá <strong>Sync</strong> en una fila
+  o <strong>Sincronizar todo</strong>. Esas acciones actualizan la misma base que consulta Kyber oficial.
+</div>
+<?php endif; ?>
 
 <?php if (isset($_GET['configurado'])): ?>
 <div style="background:rgba(34,197,94,.1);border-bottom:1px solid rgba(34,197,94,.2);padding:10px 28px;font-size:13px;color:#22c55e;display:flex;align-items:center;gap:8px">
@@ -432,13 +442,18 @@ function timeAgo(dateStr) {
 function api(params, cb) {
     var url = 'sync.php?' + Object.keys(params).map(function(k){ return k+'='+enc(params[k]); }).join('&');
     var xhr = new XMLHttpRequest();
-    xhr.open('GET', url);
+    var protectedPanel = <?php echo defined('KYBER_WEB_PANEL') ? 'true' : 'false'; ?>;
+    xhr.open(protectedPanel ? 'POST' : 'GET', protectedPanel ? 'sync.php' : url);
+    if (protectedPanel) {
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.setRequestHeader('X-Kyber-CSRF', <?php echo json_encode(defined('KYBER_PANEL_CSRF') ? KYBER_PANEL_CSRF : ''); ?>);
+    }
     xhr.onload = function() {
         try { cb(null, JSON.parse(xhr.responseText)); }
         catch(e) { cb(e, null); }
     };
     xhr.onerror = function() { cb(new Error('Network error'), null); };
-    xhr.send();
+    xhr.send(protectedPanel ? Object.keys(params).map(function(k){ return enc(k)+'='+enc(params[k]); }).join('&') : null);
 }
 
 // ── Refresh estado ────────────────────────────────────────────────────────────
@@ -670,6 +685,8 @@ function updateWorkerBar(worker) {
 
 // ── Encolar vista ─────────────────────────────────────────────────────────────
 function enqueueVista(nombre) {
+    if (!syncing && <?php echo defined('KYBER_WEB_PANEL') ? 'true' : 'false'; ?>
+        && !confirm('¿Traer ahora los datos más recientes de ' + nombre + '?\nEsto actualizará la base real que consulta Kyber.')) return;
     addLogLine(nombre, 'Encolando sincronizacion...', 'dim');
     openLog(nombre);
 
@@ -764,6 +781,8 @@ function syncMarked() {
 }
 
 function startQueue(names) {
+    if (<?php echo defined('KYBER_WEB_PANEL') ? 'true' : 'false'; ?>
+        && !confirm('¿Actualizar ahora los ' + names.length + ' conjuntos seleccionados?\nEsto actualizará la base real que consulta Kyber.')) return;
     syncQueue = names.slice();
     syncIndex = 0;
     syncing   = true;

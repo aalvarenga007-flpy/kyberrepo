@@ -74,11 +74,28 @@ _CSS = """
 }
 
 /* Version funcional siempre visible en la esquina marcada del sidebar. */
-.kyber-sidebar-version {
+.kyber-sidebar-footer {
     position: fixed;
     left: 1.75rem;
     bottom: 0.75rem;
     z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: calc(100vw - 3.5rem);
+}
+.kyber-panel-link {
+    padding: 0.65rem 0.75rem;
+    background: #526fe0;
+    color: white !important;
+    border-radius: 0.5rem;
+    text-decoration: none !important;
+    font-size: 0.78rem;
+    box-shadow: 0 1px 6px #0002;
+}
+.kyber-panel-link:focus-visible { outline: 3px solid #9dafff; }
+[data-testid="stSidebarUserContent"] { padding-bottom: 7rem; }
+.kyber-sidebar-version {
     padding: 0.2rem 0.45rem;
     border-radius: 0.45rem;
     background: var(--secondary-background-color);
