@@ -3,6 +3,7 @@ Description=Solicitud autenticada de sincronizacion %i desde Kyber pruebas
 
 [Path]
 PathModified=/var/lib/kyber-panel-pruebas/requests/%i
+PathModified=/var/lib/kyber-panel/requests/%i
 Unit=kyber-panel-request@%i.service
 
 [Install]

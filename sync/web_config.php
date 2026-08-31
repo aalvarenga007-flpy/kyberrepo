@@ -13,5 +13,5 @@ header('Content-Type: text/html; charset=utf-8');
 <p>Volver a revisar los últimos <?= (int)$config->getResyncDias() ?> días.</p>
 <p>Conjuntos de datos: <?= count($config->getVistas()) ?></p>
 <p>Las conexiones ya están configuradas en el servidor. Las claves se mantienen ocultas.</p>
-<p>Esta pantalla de pruebas no cambia las conexiones ni los horarios. Para traer datos nuevos ahora, volvé al panel y usá <strong>Sync</strong> o <strong>Sincronizar todo</strong>.</p>
+<p>Las conexiones y los horarios se administran en el servidor; esta pantalla solo los consulta. Para traer datos nuevos ahora, volvé al panel y usá <strong>Sync</strong> o <strong>Sincronizar todo</strong>.</p>
 </body></html>

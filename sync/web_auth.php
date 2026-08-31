@@ -26,7 +26,9 @@ function panel_authorize_user($uid, $company) {
     // the next request. Never return password hashes or connection exceptions.
     try {
         $database = getenv('AUTH_DATABASE');
-        if ($database !== 'conepasa_auth_pruebas') return false;
+        $expected = getenv('KYBER_PANEL_AUTH_DATABASE') ?: 'conepasa_auth_pruebas';
+        if (!in_array($expected, array('conepasa_auth', 'conepasa_auth_pruebas'), true)
+            || $database !== $expected) return false;
         $pdo = new PDO('mysql:host=127.0.0.1;port=3306;dbname=' . $database . ';charset=utf8mb4',
             getenv('AUTH_MYSQL_USER'), getenv('AUTH_MYSQL_PASSWORD'),
             array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 5));

@@ -3,7 +3,11 @@ Description=Despertar sincronizador %i a pedido del administrador
 
 [Service]
 Type=oneshot
+# Coalesce burst requests from "Sincronizar todo". At most one start per 6s,
+# below systemd's default five-starts/10s limit, without disabling that guard.
+ExecStartPre=/usr/bin/sleep 3
 ExecStart=/usr/bin/systemctl start --no-block kyber-sync@%i.service
+ExecStartPost=/usr/bin/sleep 3
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true

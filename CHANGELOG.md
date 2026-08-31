@@ -1,5 +1,14 @@
 # Cambios publicados
 
+## 1.0.4
+
+- Acceso independiente del panel en producción: usuarios y sesiones separados
+  de pruebas, con permisos por empresa verificados en cada petición.
+- Se agrupan las solicitudes de arranque para que Sincronizar todo no bloquee
+  las siguientes ejecuciones manuales por exceso de arranques.
+- Aviso visible de finalización y estado actual separado de mensajes anteriores.
+- La versión del panel PHP coincide con la versión de Kyber.
+
 ## 1.0.3 — Pruebas
 
 - Acceso para administradores al panel PHP original de sincronización, encima

@@ -13,7 +13,7 @@ if (!in_array($company, array('ekaru', 'ejapo'), true)
 $state = getenv('KYBER_PANEL_STATE');
 if (!$state || !is_dir($state)) panel_fail('El panel está en mantenimiento.', 503);
 $panelBase = rtrim(panel_local_path('KYBER_PANEL_BASE_PATH', '/pruebas/panel-sync'), '/');
-session_name('KYBER_PANEL_' . $company);
+session_name('KYBER_PANEL_' . (getenv('KYBER_PANEL_ENV') === 'production' ? 'PROD_' : 'TEST_') . $company);
 ini_set('session.use_strict_mode', '1');
 session_save_path($state . '/sessions');
 session_set_cookie_params(array('lifetime'=>0, 'path'=>$panelBase . '/' . $company . '/',
@@ -47,6 +47,11 @@ if (!panel_lease_valid($access, $state) || !panel_authorize_user($access['uid'],
     panel_fail('Ingresá a Kyber como administrador y usá el botón «Panel de sincronización».');
 }
 define('KYBER_WEB_PANEL', true);
+$versionSource = file_get_contents(__DIR__ . '/../core/version.py');
+if (!preg_match('/APP_VERSION = "([0-9]+\.[0-9]+\.[0-9]+)"/', $versionSource, $versionMatch)) {
+    panel_fail('El panel está en mantenimiento.', 503);
+}
+define('KYBER_APP_VERSION', $versionMatch[1]);
 define('KYBER_PANEL_CSRF', $_SESSION['csrf']);
 define('BI_ROOT', '/opt/kyber/sync/' . $company);
 define('BI_CODE', __DIR__);

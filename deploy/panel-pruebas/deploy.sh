@@ -98,6 +98,8 @@ systemd-run --unit=kyber-panel-readonly-check --wait --pipe --collect \
     -p WorkingDirectory=/opt/kyber/app-pruebas \
     --setenv=KYBER_PANEL_STATE=/var/lib/kyber-panel-pruebas \
     --setenv=KYBER_PANEL_URL=https://kyber.com.py/pruebas/panel-sync \
+    --setenv=KYBER_PANEL_AUTH_DATABASE=conepasa_auth_pruebas \
+    --setenv=KYBER_PANEL_APP_PATH=/pruebas/ \
     /opt/kyber/venv/bin/python /opt/kyber/app-pruebas/scripts/verify_panel_staging.py
 trap - ERR
 echo "PREPARED backup=$backup rollback=$old"

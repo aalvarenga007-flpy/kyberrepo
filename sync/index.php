@@ -240,7 +240,7 @@ input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--ac
   </div>
   <div class="header-right">
     <?php if (defined('KYBER_WEB_PANEL')): ?><a href="<?= htmlspecialchars(panel_app_path(), ENT_QUOTES, 'UTF-8') ?>" class="btn btn-ghost">← Volver a Kyber</a><?php endif; ?>
-    <span class="version-badge">v<?php echo $version; ?></span>
+    <span class="version-badge">v<?php echo defined('KYBER_APP_VERSION') ? KYBER_APP_VERSION : $version; ?></span>
     <button class="btn btn-ghost" onclick="showPrerequisites()" title="Verificar sistema">🔧 Sistema</button>
     <a href="configuracion.php" class="btn btn-ghost" title="Configuracion">⚙ Configuracion</a>
     <button class="btn btn-ghost" onclick="refreshStatus()">↻ Actualizar</button>
@@ -249,7 +249,7 @@ input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--ac
 
 <?php if (defined('KYBER_WEB_PANEL')): ?>
 <div style="background:#27324b;padding:14px 28px;color:#f4f6ff;font-size:14px">
-  <strong>Panel de pruebas · Datos reales de <?= htmlspecialchars($appName, ENT_QUOTES, 'UTF-8') ?></strong><br>
+  <strong><?= getenv('KYBER_PANEL_ENV') === 'production' ? 'Panel de producción' : 'Panel de pruebas' ?> · Datos reales de <?= htmlspecialchars($appName, ENT_QUOTES, 'UTF-8') ?></strong><br>
   Mirar el estado no inicia una sincronización. Para traer lo más reciente, usá <strong>Sync</strong> en una fila
   o <strong>Sincronizar todo</strong>. Esas acciones actualizan la misma base que consulta Kyber oficial.
 </div>
@@ -296,6 +296,8 @@ input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--ac
   <div class="stat-card"><div class="stat-label">En cola</div><div class="stat-value orange" id="statQueue">—</div></div>
   <div class="stat-card"><div class="stat-label">Registros totales</div><div class="stat-value blue" id="statRec">—</div></div>
 </div>
+
+<div id="syncSummary" role="status" aria-live="polite" style="padding:16px;margin-bottom:18px;background:var(--surface);border:1px solid var(--border);border-radius:10px">Consultando el estado actual…</div>
 
 <!-- Toolbar -->
 <div class="toolbar">
@@ -369,6 +371,8 @@ input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--ac
 <!-- Log row -->
 <tr class="log-row" id="logrow-<?php echo $k; ?>">
   <td colspan="8">
+    <div id="currentState-<?php echo $k; ?>" style="padding:10px 16px;color:var(--green)" role="status"></div>
+    <div class="dim" style="padding:0 16px;font-size:11px">Historial de mensajes de esta pantalla (no es el estado actual)</div>
     <div class="log-lines" id="loglines-<?php echo $k; ?>">
       <div class="ll dim">Sin actividad reciente.</div>
     </div>
@@ -393,6 +397,7 @@ input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--ac
 </div>
 
 <script>
+<?php readfile(BI_CODE . '/ui_status.js'); ?>
 // ── Estado global ─────────────────────────────────────────────────────────────
 var POLL_INTERVAL = 3000;
 var pollTimer     = null;
@@ -487,7 +492,10 @@ function updateVistas() {
 // ── Refresh estado ────────────────────────────────────────────────────────────
 function refreshStatus() {
     api({ action: 'status' }, function(err, res) {
-        if (err || !res || !res.ok) return;
+        if (err || !res || !res.ok) {
+            document.getElementById('syncSummary').textContent = 'No se pudo actualizar el estado. No podemos confirmar si terminó: recargá el panel o volvé a abrirlo desde Kyber.';
+            return;
+        }
         applyStatus(res.vistas);
         updateWorkerBar(res.worker);
         document.getElementById('lastRefresh').textContent = '— ' + new Date().toLocaleTimeString('es-PY');
@@ -501,6 +509,8 @@ function applyStatus(vistas) {
         var k      = enc(v.nombre);
         var status = v.last_sync_status || 'never';
         var qJob   = v.queue_job;
+        var current = document.getElementById('currentState-' + k);
+        if (current) current.textContent = kyberCurrentState(v);
 
         // Determinar estado visual
         var dispStatus = status;
@@ -576,6 +586,7 @@ function applyStatus(vistas) {
     document.getElementById('statErr').textContent   = err;
     document.getElementById('statQueue').textContent = queue;
     document.getElementById('statRec').textContent   = fmt(rec);
+    document.getElementById('syncSummary').textContent = kyberSyncSummary(vistas);
 }
 
 function updateActionButtons(k, nombre, status, qJob) {

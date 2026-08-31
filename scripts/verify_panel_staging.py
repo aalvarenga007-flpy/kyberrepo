@@ -1,4 +1,4 @@
-"""Read-only integration checks, executed as kyber with the TEST environment.
+"""Read-only integration checks, executed as kyber with the selected environment.
 
 No login passwords, tickets, cookies, rows or HTML are printed. A short-lived
 test handoff for an existing enabled test administrator is revoked in finally.
@@ -31,12 +31,14 @@ class LoopbackHTTPS(http.client.HTTPSConnection):
 
 
 def main():
-    assert os.getenv('AUTH_DATABASE') == 'conepasa_auth_pruebas'
+    database = os.getenv('AUTH_DATABASE')
+    assert database in ('conepasa_auth_pruebas', 'conepasa_auth')
+    assert database == os.environ['KYBER_PANEL_AUTH_DATABASE']
     base = urlsplit(os.environ['KYBER_PANEL_URL'])
     origin = f'{base.scheme}://{base.netloc}'
     connection = pymysql.connect(host='127.0.0.1', port=3306,
         user=os.environ['AUTH_MYSQL_USER'], password=os.environ['AUTH_MYSQL_PASSWORD'],
-        database='conepasa_auth_pruebas', cursorclass=pymysql.cursors.DictCursor,
+        database=database, cursorclass=pymysql.cursors.DictCursor,
         connect_timeout=5, read_timeout=5)
     with connection.cursor() as cursor:
         cursor.execute("SELECT id, empresas FROM usuarios WHERE activo=1 AND rol='admin' AND debe_cambiar_password=0")
@@ -66,7 +68,7 @@ def main():
                     for key, item in parsed.items():
                         cookies[key] = item.value
                         assert item['secure'] and item['httponly'] and item['samesite'] == 'Strict'
-                        assert item['path'] == base.path + '/' + company + '/'
+                        assert item['path'] == path.split('?', 1)[0].rsplit('/', 1)[0] + '/'
                 if name.lower() == 'location' and response.status == 303:
                     assert value == base.path + '/' + company + '/index.php'
             content = response.read().decode('utf-8', errors='replace')
@@ -79,10 +81,15 @@ def main():
             link = crear_enlace({'id': admin['id'], 'rol': 'admin', 'empresas': [company]},
                                 company, state, time.time() + 60)
             token = urlsplit(link).fragment
+            if database == 'conepasa_auth':
+                # A production handoff must never authenticate against test users.
+                assert request('POST', '/pruebas/panel-sync/' + company + '/entrar', {'ticket':token})[0] == 403
+                cookies.clear()
             assert request('POST', path + '/entrar', {'ticket': token})[0] == 303
             status, page = request('GET', path + '/index.php')
             assert status == 200 and 'Vistas disponibles' in page and 'Sincronizar todo' in page
-            assert 'href="/pruebas/"' in page
+            assert 'href="' + os.environ['KYBER_PANEL_APP_PATH'] + '"' in page
+            assert 'id="syncSummary"' in page and 'v1.0.4' in page
             status, data = request('GET', path + '/sync.php?action=status')
             import json
             payload = json.loads(data)
@@ -106,5 +113,7 @@ if __name__ == '__main__':
         main()
     except Exception as exc:
         # Tracebacks could include URLs/tickets/data; emit only the type.
-        print(f'INTEGRATION_FAILED: {type(exc).__name__}', file=sys.stderr)
+        import traceback
+        line = traceback.extract_tb(exc.__traceback__)[-1].lineno
+        print(f'INTEGRATION_FAILED: {type(exc).__name__} at line {line}', file=sys.stderr)
         sys.exit(1)
