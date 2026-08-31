@@ -61,7 +61,8 @@ systemctl start kyber-panel-pruebas.service
 systemctl restart kyber-app-pruebas.service
 systemctl reload nginx
 sleep 3
-systemctl is-active --quiet kyber-panel-pruebas kyber-app-pruebas
+systemctl is-active --quiet kyber-panel-pruebas
+systemctl is-active --quiet kyber-app-pruebas
 curl --noproxy '*' --resolve kyber.com.py:8443:127.0.0.1 -fsS https://kyber.com.py:8443/healthz
 sha256sum -c "$backup/production.sha256"
 trap - ERR
