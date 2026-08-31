@@ -19,7 +19,7 @@ class PanelAccessTests(unittest.TestCase):
             (self.root / name).mkdir()
         self.env = patch.dict(os.environ, {
             'KYBER_PANEL_STATE': str(self.root),
-            'KYBER_PANEL_URL': 'https://kyber.example:8443/panel-sync',
+            'KYBER_PANEL_URL': 'https://kyber.example/pruebas/panel-sync',
         })
         self.env.start()
         self.user = {'id': 1, 'rol': 'admin', 'empresas': ['ekaru']}
@@ -33,7 +33,7 @@ class PanelAccessTests(unittest.TestCase):
         link = crear_enlace(self.user, 'ekaru', self.session, time.time() + 3600)
         parsed = urlsplit(link)
         self.assertFalse(parsed.query)
-        self.assertEqual(parsed.path, '/panel-sync/ekaru/entrar')
+        self.assertEqual(parsed.path, '/pruebas/panel-sync/ekaru/entrar')
         record = json.loads((self.root/'tickets'/hashlib.sha256(parsed.fragment.encode()).hexdigest()).read_text())
         self.assertEqual(record['company'], 'ekaru')
         self.assertLessEqual(record['expires'], time.time() + 300)

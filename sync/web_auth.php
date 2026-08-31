@@ -1,12 +1,23 @@
 <?php
 // Loaded only by the dedicated HTTPS gateway. Fail closed outside that gateway.
+function panel_local_path($name, $fallback) {
+    $path = getenv($name);
+    // Configuration, never a request parameter. Reject external URLs and traversal.
+    if (!$path || !preg_match('~^/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]*/?$~D', $path)) return $fallback;
+    return $path;
+}
+
+function panel_app_path() {
+    return panel_local_path('KYBER_PANEL_APP_PATH', '/pruebas/');
+}
+
 function panel_fail($message, $code = 403) {
     http_response_code($code);
     header('Content-Type: text/html; charset=utf-8');
     echo '<!doctype html><html lang="es"><meta charset="utf-8"><title>Panel de sincronización</title>';
     echo '<body style="font:18px system-ui;max-width:650px;margin:80px auto;padding:24px">';
     echo '<h1>Panel de sincronización</h1><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>';
-    echo '<p><a href="/">Volver a Kyber</a></p></body></html>';
+    echo '<p><a href="' . htmlspecialchars(panel_app_path(), ENT_QUOTES, 'UTF-8') . '">Volver a Kyber</a></p></body></html>';
     exit;
 }
 

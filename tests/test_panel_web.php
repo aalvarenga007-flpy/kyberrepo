@@ -1,6 +1,14 @@
 <?php
 require __DIR__ . '/../sync/web_auth.php';
 function check($ok, $label) { if (!$ok) { fwrite(STDERR, "FAIL: $label\n"); exit(1); } echo "OK: $label\n"; }
+putenv('KYBER_PANEL_BASE_PATH=/pruebas/panel-sync');
+check(panel_local_path('KYBER_PANEL_BASE_PATH', '/fallback') === '/pruebas/panel-sync', 'staging subpath');
+foreach (array('//evil.example', '/a/../b', 'https://evil.example', '/a?x=1', "/a\r\nLocation: bad") as $bad) {
+    putenv('KYBER_PANEL_BASE_PATH=' . $bad);
+    check(panel_local_path('KYBER_PANEL_BASE_PATH', '/fallback') === '/fallback', 'unsafe path denied');
+}
+putenv('KYBER_PANEL_APP_PATH=/pruebas/');
+check(panel_app_path() === '/pruebas/', 'return to test app');
 $root = sys_get_temp_dir() . '/kyber-web-test-' . bin2hex(random_bytes(8));
 mkdir($root, 0700); mkdir($root.'/leases', 0700); mkdir($root.'/tickets', 0700);
 $lease = bin2hex(random_bytes(32));

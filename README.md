@@ -93,18 +93,20 @@ streamlit run app.py
 
 No hay despliegue automático: es deliberado, porque hay dos clientes en producción.
 
-**Primero a pruebas** (`http://186.12.177.53:9029`):
+**Primero a pruebas**: `http://186.12.177.53:9029/` redirige a
+`https://kyber.com.py/pruebas/`. Ingresar como administrador, elegir la empresa y
+usar **Panel de sincronización**, encima de la versión. El panel original abre
+en otra pestaña. Ver el estado no sincroniza; los botones Sync/Sincronizar todo
+sí actualizan las bases BI reales, previa confirmación.
 
-```bash
-rsync -av -e 'ssh -p 715' --exclude '__pycache__' --exclude '.env' --exclude 'venv' ./ root@186.12.177.53:/opt/kyber/app-pruebas/
-```
+Publicar un commit exacto desde una rama de trabajo, conservando los `.env`, la
+configuración de Streamlit y la carpeta anterior para reversión. No copiar una
+carpeta de trabajo indiscriminadamente sobre el servicio activo. La instalación
+de este acceso y sus validaciones están en `deploy/panel-pruebas/README.md`.
 
-```bash
-ssh -p 715 root@186.12.177.53 'systemctl restart kyber-app-pruebas'
-```
-
-**Recién cuando esté validado, a producción**: lo mismo apuntando a `/opt/kyber/app/` y
-reiniciando `kyber-app`. El runbook completo está en `deploy/COMANDOS_ROCKY.md`.
+**Recién validado y con autorización explícita**, promover el mismo commit a
+producción. La app oficial sigue en `https://kyber.com.py/` y no se actualiza por
+hacer push a GitHub. Ver `CHANGELOG.md` para la política de versiones.
 
 ---
 

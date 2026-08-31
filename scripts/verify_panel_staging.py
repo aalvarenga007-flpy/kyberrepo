@@ -66,6 +66,9 @@ def main():
                     for key, item in parsed.items():
                         cookies[key] = item.value
                         assert item['secure'] and item['httponly'] and item['samesite'] == 'Strict'
+                        assert item['path'] == base.path + '/' + company + '/'
+                if name.lower() == 'location' and response.status == 303:
+                    assert value == base.path + '/' + company + '/index.php'
             content = response.read().decode('utf-8', errors='replace')
             client.close()
             return status, content
@@ -79,6 +82,7 @@ def main():
             assert request('POST', path + '/entrar', {'ticket': token})[0] == 303
             status, page = request('GET', path + '/index.php')
             assert status == 200 and 'Vistas disponibles' in page and 'Sincronizar todo' in page
+            assert 'href="/pruebas/"' in page
             status, data = request('GET', path + '/sync.php?action=status')
             import json
             payload = json.loads(data)

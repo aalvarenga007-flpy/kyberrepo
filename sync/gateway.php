@@ -12,10 +12,11 @@ if (!in_array($company, array('ekaru', 'ejapo'), true)
     || !in_array($page, array('entrar', 'index.php', 'sync.php', 'configuracion.php'), true)) panel_fail('Página no disponible.', 404);
 $state = getenv('KYBER_PANEL_STATE');
 if (!$state || !is_dir($state)) panel_fail('El panel está en mantenimiento.', 503);
+$panelBase = rtrim(panel_local_path('KYBER_PANEL_BASE_PATH', '/pruebas/panel-sync'), '/');
 session_name('KYBER_PANEL_' . $company);
 ini_set('session.use_strict_mode', '1');
 session_save_path($state . '/sessions');
-session_set_cookie_params(array('lifetime'=>0, 'path'=>'/panel-sync/' . $company . '/',
+session_set_cookie_params(array('lifetime'=>0, 'path'=>$panelBase . '/' . $company . '/',
     'secure'=>true, 'httponly'=>true, 'samesite'=>'Strict'));
 session_start();
 
@@ -26,7 +27,7 @@ if ($page === 'entrar') {
         echo '<!doctype html><html lang="es"><meta charset="utf-8"><title>Abrir panel</title>';
         echo '<body><p>Abriendo tu panel de sincronización…</p><script>';
         echo 'var t=location.hash.slice(1);history.replaceState(null,"",location.pathname);';
-        echo 'if(!/^[a-f0-9]{64}$/.test(t)){location.replace("/")}else{';
+        echo 'if(!/^[a-f0-9]{64}$/.test(t)){location.replace(' . json_encode(panel_app_path()) . ')}else{';
         echo 'var f=document.createElement("form");f.method="POST";f.action=location.pathname;';
         echo 'var i=document.createElement("input");i.type="hidden";i.name="ticket";i.value=t;f.appendChild(i);document.body.appendChild(f);f.submit();}';
         echo '</script></body></html>'; exit;
@@ -37,7 +38,7 @@ if ($page === 'entrar') {
     if (!$ticket || !panel_authorize_user($ticket['uid'], $company)) panel_fail('El acceso venció o tu usuario no tiene permiso. Volvé a Kyber y abrí el panel nuevamente.');
     session_regenerate_id(true);
     $_SESSION = array('access'=>$ticket, 'csrf'=>bin2hex(random_bytes(32)));
-    header('Location: /panel-sync/' . $company . '/index.php', true, 303); exit;
+    header('Location: ' . $panelBase . '/' . $company . '/index.php', true, 303); exit;
 }
 
 $access = $_SESSION['access'] ?? null;

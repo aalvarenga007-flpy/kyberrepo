@@ -239,7 +239,7 @@ input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--ac
     <div class="header-sub">Panel de Sincronizacion BI</div>
   </div>
   <div class="header-right">
-    <?php if (defined('KYBER_WEB_PANEL')): ?><a href="/" class="btn btn-ghost">← Volver a Kyber</a><?php endif; ?>
+    <?php if (defined('KYBER_WEB_PANEL')): ?><a href="<?= htmlspecialchars(panel_app_path(), ENT_QUOTES, 'UTF-8') ?>" class="btn btn-ghost">← Volver a Kyber</a><?php endif; ?>
     <span class="version-badge">v<?php echo $version; ?></span>
     <button class="btn btn-ghost" onclick="showPrerequisites()" title="Verificar sistema">🔧 Sistema</button>
     <a href="configuracion.php" class="btn btn-ghost" title="Configuracion">⚙ Configuracion</a>

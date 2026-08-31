@@ -8,9 +8,12 @@ depende de la sesión de Kyber y se revoca al salir de Kyber.
 
 ## Superficies
 
-- HTTPS de pruebas: `https://kyber.com.py:8443/` (certificado existente).
-- `9029` se redirige solo después de validar HTTPS desde Internet.
-- Panel: `/panel-sync/ekaru/index.php` y `/panel-sync/ejapo/index.php`.
+- HTTPS de pruebas: `https://kyber.com.py/pruebas/` (certificado existente).
+- `http://186.12.177.53:9029/` redirige a esa entrada; no acepta contraseñas por HTTP.
+- Panel: `/pruebas/panel-sync/ekaru/index.php` y la variante `ejapo`.
+- Se agrega un include de ubicaciones `/pruebas/` al vhost HTTPS existente;
+  la ruta `/` y su upstream de producción permanecen sin cambios.
+- No requiere abrir 8443 ni modificar el router o firewall.
 - Solo `entrar`, `index.php`, `sync.php` y `configuracion.php` pasan al gateway.
 - No se sirve `worker.php`, código fuente, configuraciones, logs ni directorios.
 - FPM separado del PHP existente; no se toca el servicio php-fpm compartido.
@@ -32,10 +35,15 @@ usando su configuración y temporizadores sin cambios.
 
 Empaquetar un commit, verificar SHA256, extraer a un directorio
 `/opt/kyber/app-pruebas.release-<sha>` y ejecutar las pruebas Python/PHP antes de
-invocar `bash deploy/panel-pruebas/deploy.sh <release>`. El script guarda respaldo,
-prepara TLS sin retirar 9029 y no inicia workers. Validar el acceso TLS externo,
-las denegaciones, el login y el estado por empresa antes de reemplazar la config
-de pruebas por `nginx.conf` y habilitar las dos unidades `.path` y el FPM.
+invocar `bash deploy/panel-pruebas/deploy.sh <release>`. Este script es la migración
+única desde el estado inspeccionado de 9029; no es un actualizador genérico.
+Guarda respaldo de todas las configuraciones que modifica, comprueba el hash
+del vhost antes de insertar solo el include y revierte ante fallas de validación.
+Comprueba acceso, cookies, retorno a pruebas, denegaciones y estado por empresa.
+No inicia workers. Luego de validar HTTPS externo, habilitar el FPM y las dos
+unidades `.path` existentes. No volver a escribir los archivos de solicitud al
+habilitarlas. Una publicación futura debe preservar el esquema y los datos,
+y actualizar solo el release de pruebas con autorización.
 
 Conservar la carpeta de rollback y la configuración Nginx anterior. Nunca mezclar
 este despliegue con `main` ni con `/opt/kyber/app` sin autorización separada.
